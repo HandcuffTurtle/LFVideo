@@ -498,7 +498,8 @@ upstream_inputs:
 > 对应 outline_sections[4]，beat_type=`demonstration`，visual_priority=`code`
 
 - **组件**：`@SplitLayout`
-- **Props**（对齐 tutorial.final.md §五.1 代码对比）：
+- **Props（B 轨优先 / A 轨兜底）**（对齐 tutorial.final.md §五.1 代码对比）：
+  **B 轨版（IDE 录屏可用时）**：
   ```json
   {
     "direction": "horizontal",
@@ -517,6 +518,31 @@ upstream_inputs:
       "video_props": {
         "src": "[B 轨占位：IDE 录屏 — 只写 data 喂入 @ComparisonCard]",
         "position": "fill"
+      }
+    }
+  }
+  ```
+  **A 轨兜底版（B 轨录屏缺失时）**：
+  ```json
+  {
+    "direction": "horizontal",
+    "ratio": 0.5,
+    "left": {
+      "label": "❌ 从零手写",
+      "component": "@TerminalScene",
+      "props": {
+        "title": "反面：为这期从零手写组件",
+        "language": "tsx",
+        "code": "// ❌ 反面示例\n// 违反「固定模板 + 内容替换」\nexport const ComparisonScene: React.FC = () => {\n  // 从零手写布局、样式、动画…\n  // 忽略仓库现成的 @ComparisonCard\n  return <div className=\"custom-layout\">...</div>;\n};"
+      }
+    },
+    "right": {
+      "label": "✅ 数据驱动",
+      "component": "@TerminalScene",
+      "props": {
+        "title": "正确：只传数据复用 @ComparisonCard",
+        "language": "tsx",
+        "code": "// ✅ 正确示例\nconst comparison = {\n  left:  { title: 'MoviePy', points: ['纯 Python', '简单拼接'], status: 'error' },\n  right: { title: 'Remotion', points: ['TS 类型安全', '模板复用'], status: 'success' },\n};\n// <ComparisonCard {...comparison} />"
       }
     }
   }
@@ -569,7 +595,8 @@ upstream_inputs:
 > 对应 tutorial.final.md §五.2 SSR 守卫
 
 - **组件**：`@SplitLayout`
-- **Props**（对齐 tutorial.final.md §五.2 代码对比）：
+- **Props（B 轨优先 / A 轨兜底）**（对齐 tutorial.final.md §五.2 代码对比）：
+  **B 轨版（IDE 录屏可用时）**：
   ```json
   {
     "direction": "horizontal",
@@ -588,6 +615,31 @@ upstream_inputs:
       "video_props": {
         "src": "[B 轨占位：IDE 录屏 — 加入守卫后一次性通过]",
         "position": "fill"
+      }
+    }
+  }
+  ```
+  **A 轨兜底版（B 轨录屏缺失时）**：
+  ```json
+  {
+    "direction": "horizontal",
+    "ratio": 0.5,
+    "left": {
+      "label": "❌ 顶层读 window 崩溃",
+      "component": "@TerminalScene",
+      "props": {
+        "title": "ReferenceError: window is not defined",
+        "language": "tsx",
+        "code": "// ❌ Node 端无 DOM 环境\n// Remotion SSR 截图时组件在 Node.js 执行\nconst w = window.innerWidth;  // 💥 崩溃\n\n// 终端输出：\n// ReferenceError: window is not defined\n// npx remotion render → 红屏"
+      }
+    },
+    "right": {
+      "label": "✅ typeof window 守卫",
+      "component": "@TerminalScene",
+      "props": {
+        "title": "typeof window 守卫 + MDC 规则",
+        "language": "tsx",
+        "code": "// ✅ 类型安全守卫\nconst getWidth = () =>\n  typeof window !== 'undefined'\n    ? window.innerWidth\n    : 1920;  // SSR 时用默认值\n\n// .cursor/rules/remotion-ssr.mdc:\n// \"任何 Remotion 组件不得在顶层读 window/document\""
       }
     }
   }
@@ -674,15 +726,16 @@ upstream_inputs:
     "background": "gradient"
   }
   ```
-- **Props（后半 @TerminalScene）**：
+- **Props（后半 @TerminalScene — A 轨渲染，同时也是 B 轨缺失时的兜底）**：
   ```json
   {
     "title": "npx remotion render 出片",
     "language": "bash",
-    "code": "cd OpenMontage/remotion-composer\nnpx remotion studio                  # 可视化调试\nnpx remotion render src/index.ts \\\n  <CompositionId> out/ep02.mp4       # 渲染出片"
+    "code": "cd OpenMontage/remotion-composer\nnpx remotion studio                  # 可视化调试\nnpx remotion render src/index.ts \\\n  <CompositionId> out/ep02.mp4       # 渲染出片\n\n# 输出：\n# ℹ Rendering frames 0-1350...\n# ℹ 100% ██████████ 1350/1350 frames\n# ✓ Video saved to out/ep02.mp4 (10:45, 30fps)"
   }
   ```
-- **B 轨指令**：
+  > **A 轨兜底说明**：当 B 轨终端录屏 (`b-terminal-render`) 缺失时，直接使用上述 `@TerminalScene` 渲染，含模拟进度输出；`animation_cues` 中的 `progress_bar` 动画提供视觉节奏。
+- **B 轨指令（有录屏时优先使用）**：
   ```json
   {
     "clip_id": "b-terminal-render",
@@ -1168,7 +1221,11 @@ upstream_inputs:
         "direction": "horizontal",
         "ratio": 0.5,
         "left": {"label": "❌ 从零手写 ComparisonScene.tsx", "component": "@VideoSlot", "src": "[B轨占位：IDE录屏—AI从零手写组件]"},
-        "right": {"label": "✅ 只传数据复用 @ComparisonCard", "component": "@VideoSlot", "src": "[B轨占位：IDE录屏—只写data喂入ComparisonCard]"}
+        "right": {"label": "✅ 只传数据复用 @ComparisonCard", "component": "@VideoSlot", "src": "[B轨占位：IDE录屏—只写data喂入ComparisonCard]"},
+        "fallback_a_track": {
+          "left": {"component": "@TerminalScene", "language": "tsx", "code": "// ❌ 反面示例\nexport const ComparisonScene: React.FC = () => {\n  // 从零手写布局、样式、动画\n  return <div className=\"custom-layout\">...</div>;\n};"},
+          "right": {"component": "@TerminalScene", "language": "tsx", "code": "// ✅ 正确示例\nconst comparison = {\n  left: { title: 'MoviePy', status: 'error' },\n  right: { title: 'Remotion', status: 'success' }\n};\n// <ComparisonCard {...comparison} />"}
+        }
       },
       "duration_seconds": 55,
       "animation_cues": [
@@ -1195,7 +1252,11 @@ upstream_inputs:
         "direction": "horizontal",
         "ratio": 0.5,
         "left": {"label": "❌ 顶层读 window 崩溃", "component": "@VideoSlot", "src": "[B轨占位：IDE录屏—window.innerWidth触发ReferenceError]"},
-        "right": {"label": "✅ typeof window 守卫 + MDC 规则封死", "component": "@VideoSlot", "src": "[B轨占位：IDE录屏—加入守卫后一次性通过]"}
+        "right": {"label": "✅ typeof window 守卫 + MDC 规则封死", "component": "@VideoSlot", "src": "[B轨占位：IDE录屏—加入守卫后一次性通过]"},
+        "fallback_a_track": {
+          "left": {"component": "@TerminalScene", "language": "tsx", "code": "// ❌ Node 端无 DOM\nconst w = window.innerWidth; // 💥 崩溃\n// ReferenceError: window is not defined"},
+          "right": {"component": "@TerminalScene", "language": "tsx", "code": "// ✅ typeof 守卫\nconst getWidth = () =>\n  typeof window !== 'undefined'\n    ? window.innerWidth : 1920;\n// + .cursor/rules/remotion-ssr.mdc"}
+        }
       },
       "duration_seconds": 50,
       "animation_cues": [
@@ -1219,7 +1280,8 @@ upstream_inputs:
       "props": {
         "title": "交给 AI + npx remotion render 出片",
         "language": "bash",
-        "code": "cd OpenMontage/remotion-composer\nnpx remotion studio                  # 可视化调试\nnpx remotion render src/index.ts \\\n  <CompositionId> out/ep02.mp4       # 渲染出片"
+        "code": "cd OpenMontage/remotion-composer\nnpx remotion studio                  # 可视化调试\nnpx remotion render src/index.ts \\\n  <CompositionId> out/ep02.mp4       # 渲染出片\n\n# 输出：\n# ℹ Rendering frames 0-1350...\n# ℹ 100% ██████████ 1350/1350\n# ✓ Video saved to out/ep02.mp4",
+        "fallback_note": "B轨终端录屏缺失时，直接使用本 @TerminalScene 渲染（含模拟进度输出）"
       },
       "duration_seconds": 45,
       "animation_cues": [
